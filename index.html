@@ -170,8 +170,7 @@
                 { id: 'recharge-me', name: 'Recharge Me', price: 60, unit: 'ขวด', ingredients: 'แอปเปิ้ล, ขิง, มะนาว', properties: 'สรรพคุณ: กระตุ้นร่างกายให้ฟื้นตัวจากการเมื่อยล้า', imageUrl: 'https://github.com/kornkawes/VerveImage/blob/main/8.png?raw=true' }
             ];
             
-            // ⚠️ ใช้ Webhook URL เดียวสำหรับทุกอย่าง ⚠️
-            const n8nWebhookUrl = "https://kornkawes.app.n8n.cloud/webhook-test/3292a5c3-0f7f-424f-92f8-7dc42f51d763";
+            const n8nWebhookUrl = "https://kornkawes.app.n8n.cloud/webhook/3292a5c3-0f7f-424f-92f8-7dc42f51d763";
 
             const menuItemsEl = document.getElementById('menu-items');
             const totalPriceEl = document.getElementById('total-price');
@@ -197,7 +196,6 @@
 
             let order = { items: {}, total: 0 };
             
-            // --- HELPER FUNCTIONS ---
             window.showMessageBox = (message, color) => {
                 const messageBox = document.createElement('div');
                 messageBox.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-${color}-500 text-white px-6 py-4 rounded-xl shadow-lg z-50 transition-all duration-300`;
@@ -207,10 +205,9 @@
             };
 
             const getOrderQueueNumber = () => {
-                const today = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
+                const today = new Date().toISOString().slice(0, 10);
                 let lastResetDate = localStorage.getItem('lastResetDate');
                 let queueNumber = parseInt(localStorage.getItem('queueNumber') || '0', 10);
-
                 if (lastResetDate !== today) {
                     queueNumber = 1;
                     localStorage.setItem('lastResetDate', today);
@@ -276,7 +273,6 @@
                 totalPriceEl.textContent = `฿${total}`;
             };
             
-            // ✅ RENDER MENU: Kept the version from Orders.html to show properties and allergy inputs.
             const renderMenu = () => {
                 menuItemsEl.innerHTML = '';
                 menu.forEach(item => {
@@ -428,7 +424,6 @@
                 });
             });
 
-            // ✅ UPLOAD LOGIC: Using the correct FormData method from Slip.html
             uploadSlipBtn.addEventListener('click', async () => {
                 const slipFile = slipUploadEl.files[0];
                 if (!slipFile) {
@@ -443,28 +438,26 @@
                 
                 const formData = new FormData();
 
-                // Append the slip image file.
-                // In n8n, this will be available as {{$binary.slipImage}}
                 formData.append('slipImage', slipFile);
 
-                // Append each piece of order data as a separate field.
-                // In n8n, these will be available as {{$json.fieldName}}
                 formData.append('queueNumber', currentOrder.queueNumber);
                 formData.append('customerName', currentOrder.customerName);
                 formData.append('customerNote', currentOrder.customerNote);
                 formData.append('total', currentOrder.total);
                 formData.append('orderTime', new Date().toISOString());
                 
-                // For nested data (objects/arrays), convert them to a JSON string.
-                // You can parse this string back into an object in n8n.
-                formData.append('customerContact', JSON.stringify(currentOrder.customerContact));
+                // ✅ MODIFICATION START: Send contact info as separate fields
+                formData.append('customerPhone', currentOrder.customerContact.phone);
+                formData.append('customerContactOther', currentOrder.customerContact.other);
+                // ❌ DELETED: formData.append('customerContact', JSON.stringify(currentOrder.customerContact));
+                // ✅ MODIFICATION END
+                
                 formData.append('items', JSON.stringify(currentOrder.items));
         
                 try {
                     await fetchWithRetry(n8nWebhookUrl, {
                         method: 'POST',
                         body: formData 
-                        // No 'Content-Type' header needed; the browser sets it for FormData.
                     });
                     
                     paymentSection.classList.add('hidden');
@@ -486,4 +479,3 @@
     </script>
 </body>
 </html>
-
