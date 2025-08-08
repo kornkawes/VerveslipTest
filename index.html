@@ -364,6 +364,8 @@
                         other: contactApp && contactId ? `${contactApp}: ${contactId}` : ''
                     },
                     customerNote: customerNote,
+                    // ✅ ADDITION: Add orderDate to the order object
+                    orderDate: new Date().toISOString(),
                     items: Object.values(order.items).filter(item => item.quantity > 0),
                     total: order.total
                 };
@@ -380,7 +382,18 @@
             });
             
             const renderPaymentPage = (finalOrder) => {
+                // ✅ ADDITION: Format and display the order date
+                const displayDate = new Date(finalOrder.orderDate).toLocaleString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Asia/Bangkok'
+                });
+
                 let summaryHtml = `<p class="text-sm font-bold text-gray-700">คิวที่: ${finalOrder.queueNumber}</p>`;
+                summaryHtml += `<p class="text-sm font-bold text-gray-700 mt-2">วันที่สั่ง: ${displayDate}</p>`; // Display the formatted date
                 summaryHtml += `<p class="text-sm font-bold text-gray-700 mt-2">ชื่อลูกค้า: ${finalOrder.customerName}</p>`;
                 summaryHtml += `<p class="text-sm font-bold text-gray-700 mt-2">ช่องทางการติดต่อ: ${finalOrder.customerContact.phone}</p>`;
                 if (finalOrder.customerContact.other) {
@@ -444,13 +457,12 @@
                 formData.append('customerName', currentOrder.customerName);
                 formData.append('customerNote', currentOrder.customerNote);
                 formData.append('total', currentOrder.total);
-                formData.append('orderTime', new Date().toISOString());
                 
-                // ✅ MODIFICATION START: Send contact info as separate fields
+                // ✅ MODIFICATION: Use the stored orderDate
+                formData.append('orderDate', currentOrder.orderDate);
+                
                 formData.append('customerPhone', currentOrder.customerContact.phone);
                 formData.append('customerContactOther', currentOrder.customerContact.other);
-                // ❌ DELETED: formData.append('customerContact', JSON.stringify(currentOrder.customerContact));
-                // ✅ MODIFICATION END
                 
                 formData.append('items', JSON.stringify(currentOrder.items));
         
@@ -479,4 +491,3 @@
     </script>
 </body>
 </html>
-
